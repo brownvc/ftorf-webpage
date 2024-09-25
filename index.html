@@ -1,5 +1,5 @@
----
-redirect_from: saff/
+--- 
+redirect_from: ftorf/
 ---
 
 <!DOCTYPE html>
@@ -110,7 +110,7 @@ redirect_from: saff/
         str += "<tr>";
         for (let j = 0; j < data[i].length; j++) {
           if (data[i][j]) {
-            str += "<td><p>" + data[i][j].label + "</p><video loop controls muted playbackRate=0.5 width=150px><source src=" + data[i][j].path + " type='video/mp4'></video></td>";
+            str += "<td><p>" + data[i][j].label + "</p><video loop controls muted playbackRate=0.5 width=175px><source src=" + data[i][j].path + " type='video/mp4'></video></td>";
           } else {
             str += "<td></td>"
           }
@@ -197,7 +197,7 @@ redirect_from: saff/
           <h3 style="text-align: left";>
             <a href="https://mmehas.github.io">Mikhail Okunev</a><br> 
             <a href="https://www.linkedin.com/in/marcmapeke/">Marc Mapeke</a><br> 
-            <a href="https://www.battal.me/">Benjamin Attal</a> <br>
+            <a href="https://benattal.github.io/">Benjamin Attal</a> <br>
             <a href="https://richardt.name/">Christian Richardt</a><br> 
             <a href="http://www.cs.cmu.edu/~motoole2/">Matthew O'Toole</a><br>
             <a href="https://jamestompkin.com/">James Tompkin</a>
@@ -221,29 +221,27 @@ redirect_from: saff/
     <table class="center">
         <tr>
           <td>
-            <a href="https://arxiv.org/abs/2303.01526">
+            <a href="https://mmehas.github.io/files/ftorf.pdf">
             <img src="./images/arxiv.png" style="height:150px;border:2px solid #000;">
             </a>
             <br>
             <p>
-              <a href="https://arxiv.org/abs/2303.01526">arXiv.org</a> | <a href="https://arxiv.org/pdf/2303.01526.pdf">PDF</a>
+              <a href="https://mmehas.github.io/files/ftorf.pdf">PDF</a>
             </p>      
           </td>
           <td>
-            <a href="https://github.com/brownvc/saff/">
               <img src="./images/github-mark.svg" style="height:150px;border:2px solid #000;">
-            </a>
             <br>
             <p>
-              <a href="https://github.com/brownvc/saff/">Code (To be released soon)</a>
+              Code (To be released soon)
             </p>
           </td>
         </tr>
     </table>
     <table class="center">
     <tr>
-        <td><video src="videos/temporal_interpolation/pillow_ctof_trim.mp4" type="video/mp4" height="300" autoplay muted loop></td>
-        <td><video src="videos/temporal_interpolation/pillow_interpolation.mp4" type="video/mp4" height="300" autoplay muted loop></td>
+        <td><video src="videos/temporal_interpolation/baseball_ctof_slow.mp4" type="video/mp4" height="300" autoplay muted loop></td>
+        <td><video src="videos/temporal_interpolation/baseball_interpolation.mp4" type="video/mp4" height="300" autoplay muted loop></td>
     </tr>
     <tr style="text-align:center">
         <td>C-ToF (no temporal interpolation possible)</td>
@@ -253,7 +251,7 @@ redirect_from: saff/
 
     <h2>Abstract</h2>
     <p class="center">
-        Flowed time of flight radiance fields (<b>F-T&ouml;RF</b>) is a method to correct for motion artifacts in continuous-wave time of flight  imaging (C-ToF).
+        Flowed time of flight radiance fields (F-T&ouml;RF) is a method to correct for motion artifacts in continuous-wave time of flight  imaging (C-ToF).
         As C-ToF cameras must capture multiple exposures over time to derive depth, any moving object will exhibit depth errors.
         We formulate an optimization problem to reconstruct the raw frames captured by the camera via an underlying 4D volumetric scene and a physically-based differentiable C-ToF simulator.
         With weak optical flow supervision, we can infer a 3D volume with scene flow that explains the raw captures, even though any particular time instant does not provide sufficient constraints upon the depth or motion.
@@ -262,17 +260,25 @@ redirect_from: saff/
     </p>
   
     <h2>Problem</h2>
+    C-ToF's imaging model assumes that scenes and the camera are static: as we must estimate the phase offsets from multiple frames, depth is inaccurate if anything moves, causing large errors such as ghosting or blurring under fast motion.
+      This affects objects with motions relative to the camera, and also any motions of the camera itself relative to the scene - static or otherwise - such as handheld motions of a smartphone. See the example below.
     <div style="text-align: left">
       <img src="./images/problem.png" style="width:800px;">
-      C-ToF cameras cannot measure depth for moving objects accurately due to their operating principle. To measure the depth, C-ToF camera has to take four exposures sequentially, which results in depth artifacts due to misalignment of ToF images.
-      <b>Left:</b> incorrect depth on the moving cube. <b>Right:</b> C-ToF depth along the red (dynamic cube) and green (static background) lines, showing discrepancies in the dynamic region.
+      The cube’s motion (<b>left</b>) invalidates C-ToF algorithm assumptions. Depth is derived both from light reflected from the cube and background, causing ghosts to appear(<b>center</b>). <b>Right</b>: C-ToF depth along the red and green lines, showing discrepancies.      
     </div>
 
     <h2>Our Proposal</h2>
+    To correct for the ToF moving objects artifacts we propose to learn 3D scene flow and use it to reproject the scene at time moments aligned with desynchronized ToF exposures. We call this phase-invariant reprojection. 
+    As a side effect of this approach, we can also temporally upsample the video at arbitrary rate.
+
     <div style="text-align: left">
+        <br>
         <img src="./images/proposal.png" style="width:800px;">
-        We propose to solve the problem by jointly reconstructing motion and density through a dynamic NeRF model. By reprojecting the density along the predicted motion trajectory (phase-invariant reprojection in the figure), we can model the ToF camera response and use desynchronized ground truth frames
-        to guide the optimization. An estimated optical flow is used as a prior to initialize the velocity network.
+        The four raw frames captured sequentially over time τ
+        (<b>top</b>) show large brightness differences due to the emission phase. The large disparity
+        on moving objects causes depth artifacts. Recovering a 4D scene representation with
+        help from 2D optical flow lets us correctly reproject one timestep onto another in a
+        phase-aware way, such that we can supervise the scene at fractional time moments.
       </div>
     <br>
   
@@ -286,12 +292,11 @@ redirect_from: saff/
           <td>
             <h3>Bibtex</h3>
             <pre><code>
-                @inproceedings{OkunevMapeke2024FToRF,
-                title={Flowed Time of Flight Radiance Fields},   
-                author={Mikhail Okunev and Marc Mapeke and Benjamin Attal and Christian Richardt and Matthew O'Toole and James Tompkin},
-                booktitle = {Proceedings of the European Conference on Computer Vision (ECCV)},
-                month = {October},
-                year={2024},
+                @inproceedings{okunev2024flowed,
+                    title={Flowed Time of Flight Radiance Fields},
+                    author={Okunev, Mikhail and Mapeke, Marc and Attal, Benjamin and Richardt, Christian and O’Toole, Matthew and Tompkin, James},
+                    year={2024},
+                    organization={European Conference on Computer Vision}
                 }</code>
               </pre>
           </td>
@@ -348,8 +353,48 @@ redirect_from: saff/
           displayName: 'Book',
           gt_exists: false,
         },
-
-        
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'sliding_cube',
+          displayName: 'Sliding Cube',
+          gt_exists: true,
+        },
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'arcing_cube',
+          displayName: 'Arcing Cube',
+          gt_exists: true,
+        },
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'speed_test_texture',
+          displayName: 'Cube Speed Test',
+          gt_exists: true,
+        },
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'speed_test_chair',
+          displayName: 'Chairs Speed Test',
+          gt_exists: true,
+        },
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'occlusion',
+          displayName: 'Occlusion',
+          gt_exists: true,
+        },
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'acute_z_speed_test',
+          displayName: 'Acute Z motion',
+          gt_exists: true,
+        },
+        {
+          folder: 'videos/synthetic_scenes',
+          name: 'z_motion_speed_test',
+          displayName: 'Z Motion Speed Test',
+          gt_exists: true,
+        },
       ]
 
       const methods = [
@@ -366,15 +411,15 @@ redirect_from: saff/
           displayName: 'C-ToF',
         },
         {
-          name: 'torf_depth',
+          name: 'torf',
           displayName: 'T&ouml;RF',
         },
         {
-          name: 'warped_slow',
+          name: 'warped',
           displayName: '2D Flowed',
         },
         {
-          name: "GT",
+          name: "gt",
           displayName: "Ground Truth",
         },
       ]
@@ -399,7 +444,7 @@ redirect_from: saff/
         dsDiv.innerHTML = dsDiv.innerHTML + `<button onclick='hideVideoDiv(\"` + d.name + `\")'>Hide Videos</button><br><br>`
 
         const videoGridData = [methods.map((method) => (
-          method.name != 'GT' || d.gt_exists ?
+          method.name != 'gt' || d.gt_exists ?
             {
               path: d.folder + "/" + d.name + "/" + method.name + '.mp4',
               label: method.displayName
@@ -422,6 +467,7 @@ redirect_from: saff/
 
 
     </script>
+    
 
 <h2>Acknowledgements</h2>
 
@@ -429,10 +475,11 @@ Mikhail Okunev and James Tompkin thank NSF CAREER 2144956 and Cognex. Marc Mapek
 
 <br>
 
-<table style="border-spacing: 10px 0;">
+<table style="border-spacing: 0px 0;">
 <tr>
 <td><img src="./images/nsf-logo-desktop.svg" width="200px"></td>
 <td><img src="./images/cognexLogo.jpg" width="200px"></td>
+<td><img src="./images/MetaLogo.png" width="200px"></td>
 <td><img src="./images/jkcLogo.png" width="200px"></td>
 </tr>
 </table>
