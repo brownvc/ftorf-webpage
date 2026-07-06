@@ -1,509 +1,257 @@
---- 
+---
 redirect_from: ftorf/
 ---
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>F-T&ouml;RF: Flowed Time of Flight Radiance Fields</title>
+  <title>F-TöRF: Flowed Time of Flight Radiance Fields (ECCV 2024)</title>
 
-  <style>
-    body {
-      padding: 1em;
-      color: rgb(0, 0, 0);
-      font-size: 14px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-      background-color: rgb(255, 255, 255);
-    }
+  <!-- Brown brand fonts (Minion 3 + Freight Sans), the lab's Adobe Fonts kit. -->
+  <link rel="preconnect" href="https://use.typekit.net" crossorigin>
+  <link rel="stylesheet" href="https://use.typekit.net/diw5pgv.css">
 
-    #container {
-      max-width: 800px;
-      text-align: justify;
-      margin: 0 auto;
-    }
+  <!-- Shared BVC project-page styles + JS (bar, logo registry, theme, videoGrid). -->
+  <link rel="stylesheet" href="https://visual.cs.brown.edu/projects/shared/project.css">
+  <script defer src="https://visual.cs.brown.edu/projects/shared/project.js"></script>
 
-    h1 {
-      color: rgb(213, 28, 37);
-      text-align: center;
-    }
-
-    h2 {
-      color: rgb(213, 28, 37);
-      text-align: center;
-    }
-
-    h3 {
-      font-weight: bold;
-      margin-bottom: 0.5em;
-    }
-
-    li {
-      margin: 3px 0px;
-      width: 560px;
-      hyphens: auto;
-      text-align: justify;
-    }
-
-    PRE {
-        font-family:    'Monotype.com', Courier New, monospace;
-        font-size:  0.7em;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-    }
-
-    a {
-      color: rgb(213, 28, 37);
-      text-decoration: none;
-    }
-
-    a:link {
-      color: rgb(213, 28, 37);
-    }
-
-    a:visited {
-      color: rgb(183, 0, 07);
-    }
-
-    a:hover {
-      color: rgb(53, 0, 0);
-    }
-
-    .dataset {
-      font-variant: small-caps;
-    }
-
-    .center {
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .centerContent {
-      text-align: center;
-    }
-
-    .centerContent table {
-      margin-left: 50%;
-      transform: translateX(-50%);
-      -webkit-transform: translateX(-50%);
-    }
-
-    td p {
-      text-align: center;
-      margin-top: 0px;
-      margin-bottom: 5px;
-    }
-    table {
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    </style>
-  
+  <!-- Pre-paint theme: apply the stored/OS choice before first render (no
+       flash). Same localStorage 'theme' key + attribute as visual.cs.brown.edu. -->
   <script>
-    function addVideoGrid(div, data) {
-      console.warn(data);
-      let str = "<div class='centerContent'><table><tbody>";
-      for (let i = 0; i < data.length; i++) {
-        str += "<tr>";
-        for (let j = 0; j < data[i].length; j++) {
-          if (data[i][j]) {
-            str += "<td><p>" + data[i][j].label + "</p><video loop controls muted playbackRate=0.5 width=175px><source src=" + data[i][j].path + " type='video/mp4'></video></td>";
-          } else {
-            str += "<td></td>"
-          }
-        }
-        str += "</tr>";
-      }
-      str += "</tbody></table></div>"
-      div.innerHTML = div.innerHTML + str;
-
-      // Videos are too fast, set playback to be half speed by default
-      justAddedVideos = div.getElementsByTagName("video")
-      setPlaybackRateOnVideos( justAddedVideos, 0.5 );
-    }
-
-    function addVideoControls(div, videoDivName) {
-      let str = "<div class='centerContent'>";
-
-      const playbackRates = [
-        { rate: 0.05, label: '0.10x' },
-        { rate: 0.125, label: '0.25x' },
-        { rate: 0.25, label: '0.50x' },
-        { rate: 0.5, label: '1.00x' },
-      ]
-
-      str += "<button onclick='setPlayStateOnVideos( document.getElementById(\"" + videoDivName + "\").getElementsByTagName(\"video\" ), true)'>Play All</button>";
-      str += "<button onclick='setPlayStateOnVideos( document.getElementById(\"" + videoDivName + "\").getElementsByTagName( \"video\" ), false)'>Pause All</button>";
-      str += "<button onclick='setTimeOnVideos( document.getElementById(\"" + videoDivName + "\").getElementsByTagName( \"video\" ), 0)'>Reset All to t=0</button>";
-      playbackRates.forEach((pbr) => {
-        str += "<button onclick='setPlaybackRateOnVideos( document.getElementById(\"" + videoDivName + "\").getElementsByTagName( \"video\" ), " + pbr.rate + ")'>" + pbr.label + "</button>"
-      });
-      str += "</div>"
-      div.innerHTML += str;
-    }
-
-    function setPlaybackRateOnVideos(videos, rate) {
-      for (let i = 0; i < videos.length; i++)
-        videos[i].playbackRate = rate
-    }
-
-    function setPlayStateOnVideos(videos, playState) {
-      for (let i = 0; i < videos.length; i++) {
-        if (playState)
-          videos[i].play()
-        else
-          videos[i].pause()
-      }
-    }
-
-    function setTimeOnVideos(videos, time) {
-      for (let i = 0; i < videos.length; i++) {
-        videos[i].currentTime = time
-      }
-    }
-
-    function showVideoDiv(datasetName) {
-
-      dsDiv = document.getElementById(datasetName + '-videos');
-      videosInDiv = dsDiv.getElementsByTagName("video")
-      setPlayStateOnVideos(videosInDiv, false)
-
-      dsDiv.style.display = 'none'
-      dsDiv.style.display = 'block'
-    }
-
-    function hideVideoDiv(datasetName) {
-      dsDiv = document.getElementById(datasetName + '-videos');
-      videosInDiv = dsDiv.getElementsByTagName("video")
-      dsDiv.style.display = 'none'
-    }
+    (function () {
+      var t; try { t = localStorage.getItem('theme'); } catch (e) {}
+      var dark = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+    })();
   </script>
 
+  <!-- Page-specific: teaser is a two-clip before/after comparison, so reset
+       the shared full-width rule and lay the pair side by side. -->
+  <style>
+    .teaser-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .teaser-row .teaser-item { margin: 0; flex: 0 1 auto; }
+    /* Override the shared .teaser rule that forces width:100% on its media. */
+    .teaser-row video {
+      width: auto;
+      max-width: 100%;
+      max-height: 320px;
+      border-radius: 6px;
+      display: block;
+    }
+    .teaser-row figcaption { text-align: center; margin-top: 0.4em; }
+  </style>
 </head>
 
-
 <body>
-  <div id="container">
-    
-    <h1>F-T&ouml;RF: Flowed Time of Flight Radiance Fields</h1>
-    <h2>ECCV 2024</h2>
+  <!-- The BVC bar (crest, section links, social icons, theme toggle) is
+       injected by the shared project.js. -->
 
-    <table class="center">
-      <tr>
-        <td>
-          <h3 style="text-align: left";>
-            <a href="https://mmehas.github.io">Mikhail Okunev</a><br> 
-            <a href="https://www.linkedin.com/in/marcmapeke/">Marc Mapeke</a><br> 
-            <a href="https://benattal.github.io/">Benjamin Attal</a> <br>
-            <a href="https://richardt.name/">Christian Richardt</a><br> 
-            <a href="http://www.cs.cmu.edu/~motoole2/">Matthew O'Toole</a><br>
-            <a href="https://jamestompkin.com/">James Tompkin</a>
-          </h3>
-        </td>
-        <td>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        </td>
-        <td>
-            <img src="./images/BrownCSLogo.png" width="150px">
-        </td>
-        <td>
-            <img src="./images/MetaLogo.png" width="150px">
-        </td>
-        <td>
-            <img src="./images/CMULogo.png" width="150px">
-        </td>
-      </tr>
-    </table>
+  <main class="project">
 
-    <table class="center">
-        <tr>
-          <td>
-            <a href="https://mmehas.github.io/files/ftorf.pdf">
-            <img src="./images/arxiv.png" style="height:150px;border:2px solid #000;">
-            </a>
-            <br>
-            <p>
-              <a href="https://mmehas.github.io/files/ftorf.pdf">PDF</a>
-            </p>      
-          </td>
-          <td>
-              <img src="./images/github-mark.svg" style="height:150px;border:2px solid #000;">
-            <br>
-            <p>
-              <a href="https://github.com/mmehas/ftorf_public">Code</a>
-            </p>
-          </td>
-          <td>
-              <a href="https://1drv.ms/f/c/4dd35d8ee847a247/EsiF6mb15ZlKlTZmg8N_OIcBCaQGUmWWVNOldMTaRsQXeQ?e=eIy7Rz">
-                <img src="./images/dataset.png" style="height:150px;border:2px solid #000;">
-              </a>
-            <br>
-            <p>
-              <a href="https://1drv.ms/f/c/4dd35d8ee847a247/EsiF6mb15ZlKlTZmg8N_OIcBCaQGUmWWVNOldMTaRsQXeQ?e=eIy7Rz">Dataset</a>
-            </p>
-          </td>
-        </tr>
-    </table>
-    <table class="center">
-    <tr>
-        <td><video src="videos/temporal_interpolation/baseball_ctof_slow.mp4" type="video/mp4" height="300" autoplay muted loop></td>
-        <td><video src="videos/temporal_interpolation/baseball_interpolation.mp4" type="video/mp4" height="300" autoplay muted loop></td>
-    </tr>
-    <tr style="text-align:center">
-        <td>C-ToF (no temporal interpolation possible)</td>
-        <td>Ours (8x temporal interpolation)</td>
-    </tr>
-    </table>
+    <h1 class="project-title">
+      F-T&ouml;RF
+      <span class="subtitle">Flowed Time of Flight Radiance Fields</span>
+    </h1>
+    <p class="venue">European Conference on Computer Vision (ECCV) 2024</p>
 
-    <h2>Abstract</h2>
-    <p class="center">
-        Flowed time of flight radiance fields (F-T&ouml;RF) is a method to correct for motion artifacts in continuous-wave time of flight  imaging (C-ToF).
+    <!-- VERIFY: affiliation superscripts inferred (Richardt = Meta; Attal and
+         O'Toole = CMU; Okunev, Mapeke, Tompkin = Brown CS). The source page
+         listed the Brown/Meta/CMU logos without a per-author mapping. -->
+    <div class="authors">
+      <span class="author"><a href="https://mmehas.github.io" target="_blank" rel="noopener">Mikhail Okunev</a><sup>1</sup>,</span>
+      <span class="author"><a href="https://www.linkedin.com/in/marcmapeke/" target="_blank" rel="noopener">Marc Mapeke</a><sup>1</sup>,</span>
+      <span class="author"><a href="https://benattal.github.io/" target="_blank" rel="noopener">Benjamin Attal</a><sup>3</sup>,</span>
+      <span class="author"><a href="https://richardt.name/" target="_blank" rel="noopener">Christian Richardt</a><sup>2</sup>,</span>
+      <span class="author"><a href="http://www.cs.cmu.edu/~motoole2/" target="_blank" rel="noopener">Matthew O'Toole</a><sup>3</sup>,</span>
+      <span class="author"><a href="https://jamestompkin.com/" target="_blank" rel="noopener">James Tompkin</a><sup>1</sup></span>
+    </div>
+    <div class="affil-logos">
+      <span class="logo-item"><sup>1</sup><span data-logo="brown-cs"></span></span>
+      <span class="logo-item"><sup>2</sup><span data-logo="meta"></span></span>
+      <span class="logo-item"><sup>3</sup><span data-logo="cmu"></span></span>
+    </div>
+
+    <nav class="resource-row">
+      <a href="https://mmehas.github.io/files/ftorf.pdf">Paper</a>
+      <a href="#code-data">Code + Data</a>
+      <a href="#video">Video</a>
+    </nav>
+
+    <figure class="teaser">
+      <div class="teaser-row">
+        <figure class="teaser-item">
+          <video src="./videos/temporal_interpolation/baseball_ctof_slow.mp4" autoplay muted loop playsinline></video>
+          <figcaption>C-ToF (no temporal interpolation possible)</figcaption>
+        </figure>
+        <figure class="teaser-item">
+          <video src="./videos/temporal_interpolation/baseball_interpolation.mp4" autoplay muted loop playsinline></video>
+          <figcaption>Ours (8&times; temporal interpolation)</figcaption>
+        </figure>
+      </div>
+    </figure>
+
+    <section id="abstract-section">
+      <h2 id="abstract">Abstract</h2>
+      <p>
+        Flowed time of flight radiance fields (F-T&ouml;RF) is a method to correct for motion artifacts in continuous-wave time of flight imaging (C-ToF).
         As C-ToF cameras must capture multiple exposures over time to derive depth, any moving object will exhibit depth errors.
         We formulate an optimization problem to reconstruct the raw frames captured by the camera via an underlying 4D volumetric scene and a physically-based differentiable C-ToF simulator.
         With weak optical flow supervision, we can infer a 3D volume with scene flow that explains the raw captures, even though any particular time instant does not provide sufficient constraints upon the depth or motion.
         On synthetic sequences, we find that our approach reduces depth errors on dynamic objects by up to 20&times; compared to C-ToF, particularly for axial motions and large disparities (&geq; 25 pixels) between raw frames.
         On real-world sequences, we see qualitatively similar gains with artifacts resolved on falling pillows and swinging baseball bats.
-    </p>
-  
-    <h2>Problem</h2>
-    C-ToF's imaging model assumes that scenes and the camera are static: as we must estimate the phase offsets from multiple frames, depth is inaccurate if anything moves, causing large errors such as ghosting or blurring under fast motion.
-      This affects objects with motions relative to the camera, and also any motions of the camera itself relative to the scene - static or otherwise - such as handheld motions of a smartphone. See the example below.
-    <div style="text-align: left">
-      <img src="./images/problem.png" style="width:800px;">
-      The cube’s motion (<b>left</b>) invalidates C-ToF algorithm assumptions. Depth is derived both from light reflected from the cube and background, causing ghosts to appear(<b>center</b>). <b>Right</b>: C-ToF depth along the red and green lines, showing discrepancies.      
-    </div>
+      </p>
+    </section>
 
-    <h2>Our Proposal</h2>
-    To correct for the ToF moving objects artifacts we propose to learn 3D scene flow and use it to reproject the scene at time moments aligned with desynchronized ToF exposures. We call this phase-invariant reprojection. 
-    As a side effect of this approach, we can also temporally upsample the video at arbitrary rate.
+    <section id="problem-section">
+      <h2 id="problem">Problem</h2>
+      <p>
+        C-ToF's imaging model assumes that the scene and the camera are static: because we must estimate the phase offsets from multiple frames, depth is inaccurate if anything moves, causing large errors such as ghosting or blurring under fast motion.
+        This affects objects that move relative to the camera, and also any motion of the camera itself relative to the scene&mdash;static or otherwise&mdash;such as the handheld motion of a smartphone. See the example below.
+      </p>
+      <figure>
+        <img src="./images/problem.png" alt="C-ToF depth ghosting under object motion">
+        <figcaption>
+          The cube's motion (<strong>left</strong>) invalidates the C-ToF algorithm's assumptions. Depth is derived from light reflected off both the cube and the background, causing ghosts to appear (<strong>centre</strong>). <strong>Right</strong>: C-ToF depth along the red and green lines, showing the discrepancies.
+        </figcaption>
+      </figure>
+    </section>
 
-    <div style="text-align: left">
-        <br>
-        <img src="./images/proposal.png" style="width:800px;">
-        The four raw frames captured sequentially over time τ
-        (<b>top</b>) show large brightness differences due to the emission phase. The large disparity
-        on moving objects causes depth artifacts. Recovering a 4D scene representation with
-        help from 2D optical flow lets us correctly reproject one timestep onto another in a
-        phase-aware way, such that we can supervise the scene at fractional time moments.
+    <section id="method-section">
+      <h2 id="method">Our Proposal</h2>
+      <p>
+        To correct the C-ToF moving-object artifacts, we learn a 3D scene flow and use it to reproject the scene at time moments aligned with the desynchronised ToF exposures. We call this phase-invariant reprojection.
+        As a side effect, we can also temporally upsample the video at an arbitrary rate.
+      </p>
+      <figure>
+        <img src="./images/proposal.png" alt="4D scene reconstruction with optical flow for phase-aware reprojection">
+        <figcaption>
+          The four raw frames captured sequentially over time &tau; (<strong>top</strong>) show large brightness differences due to the emission phase. The large disparity on moving objects causes depth artifacts. Recovering a 4D scene representation with help from 2D optical flow lets us correctly reproject one timestep onto another in a phase-aware way, so that we can supervise the scene at fractional time moments.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="video-section">
+      <h2 id="video">Video</h2>
+      <div class="embed">
+        <iframe src="https://www.youtube-nocookie.com/embed/eEaglsxK7q4" title="Presentation video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
       </div>
-    <br>
-  
-    <h2>Video</h2>
-    <div style="text-align: center">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/eEaglsxK7q4?si=hSvd-GM_q-yPG76M" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-    </div>
+    </section>
 
-    <table class="center">
-        <tr>
-          <td>
-            <h3>Bibtex</h3>
-            <pre><code>
-                @inproceedings{okunev2024flowed,
-                    title={Flowed Time of Flight Radiance Fields},
-                    author={Okunev, Mikhail and Mapeke, Marc and Attal, Benjamin and Richardt, Christian and O’Toole, Matthew and Tompkin, James},
-                    year={2024},
-                    organization={European Conference on Computer Vision}
-                }</code>
-              </pre>
-          </td>
-        </tr>
-      </table>
+    <section id="results-section">
+      <h2 id="results">Results</h2>
+      <div id="results-root"></div>
+      <script>
+        window.addEventListener('DOMContentLoaded', function () {
+          const datasets = [
+            { folder: 'videos/real_scenes', name: 'pillow', displayName: 'Pillow', gt_exists: false, group: 'Real Scenes' },
+            { folder: 'videos/real_scenes', name: 'baseball', displayName: 'Baseball', gt_exists: false, group: 'Real Scenes' },
+            { folder: 'videos/real_scenes', name: 'fan', displayName: 'Fan', gt_exists: false, group: 'Real Scenes' },
+            { folder: 'videos/real_scenes', name: 'target1', displayName: 'Target', gt_exists: false, group: 'Real Scenes' },
+            { folder: 'videos/real_scenes', name: 'jacks1', displayName: 'Jacks', gt_exists: false, group: 'Real Scenes' },
+            { folder: 'videos/real_scenes', name: 'data_color25', displayName: 'Book', gt_exists: false, group: 'Real Scenes' },
 
-    <h2>Supplemental video results</h2>
+            { folder: 'videos/synthetic_scenes', name: 'sliding_cube', displayName: 'Sliding Cube', gt_exists: true, group: 'Synthetic Scenes' },
+            { folder: 'videos/synthetic_scenes', name: 'arcing_cube', displayName: 'Arcing Cube', gt_exists: true, group: 'Synthetic Scenes' },
+            { folder: 'videos/synthetic_scenes', name: 'speed_test_texture', displayName: 'Cube Speed Test', gt_exists: true, group: 'Synthetic Scenes' },
+            { folder: 'videos/synthetic_scenes', name: 'speed_test_chair', displayName: 'Chairs Speed Test', gt_exists: true, group: 'Synthetic Scenes' },
+            { folder: 'videos/synthetic_scenes', name: 'occlusion', displayName: 'Occlusion', gt_exists: true, group: 'Synthetic Scenes' },
+            { folder: 'videos/synthetic_scenes', name: 'acute_z_speed_test', displayName: 'Acute Z motion', gt_exists: true, group: 'Synthetic Scenes' },
+            { folder: 'videos/synthetic_scenes', name: 'z_motion_speed_test', displayName: 'Z Motion Speed Test', gt_exists: true, group: 'Synthetic Scenes' },
+          ];
 
-    <p><em>Note:</em> This page has 100+ videos. Each set of results will show/hide through a button to ease the burden on the browser.</p>
+          const methods = [
+            { name: 'full_model_depth', displayName: 'Ours (Depth)', width: 500 },
+            { name: 'full_model_fwd_flow', displayName: 'Ours (Forward Flow)', width: 500 },
+            { name: 'ctof', displayName: 'C-ToF', width: 500 },
+            { name: 'torf', displayName: 'T&ouml;RF', width: 500 },
+            { name: 'warped', displayName: '2D Flowed', width: 500 },
+            { name: 'gt', displayName: 'Ground Truth', width: 500 },
+          ];
 
+          const groups = {};
+          datasets.forEach(function (d) { (groups[d.group] = groups[d.group] || []).push(d); });
 
-    <h3>Index</h3>
-    <a id="datasetindex"></a>
-    <div id="datasetindexappend"></div>
+          const root = document.getElementById('results-root');
 
-    <h2>Datasets</h2>
-    <a id="datasets"></a>
+          Object.keys(groups).forEach(function (groupName) {
+            const h3 = document.createElement('h3');
+            h3.textContent = groupName;
+            root.appendChild(h3);
 
-    <script>
-      const datasets = [
-        {
-          folder: 'videos/real_scenes',
-          name: 'pillow',
-          displayName: 'Pillow',
-          gt_exists: false,
-        },
-        {
-          folder: 'videos/real_scenes',
-          name: 'baseball',
-          displayName: 'Baseball',
-          gt_exists: false,
-        },
-        {
-          folder: 'videos/real_scenes',
-          name: 'fan',
-          displayName: 'Fan',
-          gt_exists: false,
-        },
-        {
-          folder: 'videos/real_scenes',
-          name: 'target1',
-          displayName: 'Target',
-          gt_exists: false,
-        },
-        {
-          folder: 'videos/real_scenes',
-          name: 'jacks1',
-          displayName: 'Jacks',
-          gt_exists: false,
-        },
-        {
-          folder: 'videos/real_scenes',
-          name: 'data_color25',
-          displayName: 'Book',
-          gt_exists: false,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'sliding_cube',
-          displayName: 'Sliding Cube',
-          gt_exists: true,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'arcing_cube',
-          displayName: 'Arcing Cube',
-          gt_exists: true,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'speed_test_texture',
-          displayName: 'Cube Speed Test',
-          gt_exists: true,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'speed_test_chair',
-          displayName: 'Chairs Speed Test',
-          gt_exists: true,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'occlusion',
-          displayName: 'Occlusion',
-          gt_exists: true,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'acute_z_speed_test',
-          displayName: 'Acute Z motion',
-          gt_exists: true,
-        },
-        {
-          folder: 'videos/synthetic_scenes',
-          name: 'z_motion_speed_test',
-          displayName: 'Z Motion Speed Test',
-          gt_exists: true,
-        },
-      ]
+            groups[groupName].forEach(function (d, i) {
+              const videos = methods
+                .filter(function (m) { return m.name !== 'gt' || d.gt_exists; })
+                .map(function (m) {
+                  return {
+                    src: d.folder + '/' + d.name + '/' + m.name + '.mp4',
+                    label: m.displayName,
+                    width: m.width,
+                  };
+                });
+              // Source ran every clip at half speed by default; keep that.
+              const rate = 0.5;
+              // Collapsed by default: each dataset's clips load only when the
+              // reader opens it, so the page isn't a wall of autoplaying video
+              // (there are 100+ clips in total).
+              const intro = d.note ? '<p><em>Note:</em> ' + d.note + '</p>' : '';
+              videoGridCollapsible(root, (i + 1) + '. ' + d.displayName, videos,
+                { controls: true, syncReset: true, rate: rate, layout: 'stack', intro: intro });
+            });
+          });
+        });
+      </script>
+    </section>
 
-      const methods = [
-        {
-          name: 'full_model_depth',
-          displayName: 'Ours (Depth)',
-        },
-        {
-          name: 'full_model_fwd_flow',
-          displayName: 'Ours (Forward Flow)',
-        },
-        {
-          name: 'ctof',
-          displayName: 'C-ToF',
-        },
-        {
-          name: 'torf',
-          displayName: 'T&ouml;RF',
-        },
-        {
-          name: 'warped',
-          displayName: '2D Flowed',
-        },
-        {
-          name: "gt",
-          displayName: "Ground Truth",
-        },
-      ]
+    <section id="code-data-section">
+      <h2 id="code-data">Code + Data</h2>
+      <p>
+        We release our code and the captured continuous-wave time-of-flight
+        data for the scenes we evaluate.
+      </p>
+      <ul>
+        <li><a href="https://github.com/mmehas/ftorf_public">Code</a> &mdash; our implementation of F-T&ouml;RF.</li>
+        <li><a href="https://1drv.ms/f/c/4dd35d8ee847a247/EsiF6mb15ZlKlTZmg8N_OIcBCaQGUmWWVNOldMTaRsQXeQ?e=eIy7Rz">Scene data</a> &mdash; our captured real and synthetic sequences.</li>
+      </ul>
+    </section>
 
-      datasets.forEach((d, i) => {
-        const index = document.getElementById("datasetindexappend")
-        index.innerHTML += (i + 1) + ". <a href='#" + d.name + "-results'>Results on the <span class='dataset'>" + d.displayName + "</span> dataset<br>"
+    <section id="citation-section">
+      <h2 id="citation">Citation</h2>
+      <pre class="citation"><code>@inbook{Okunev_2024,
+  title     = {Flowed Time of Flight Radiance Fields},
+  author    = {Okunev, Mikhail and Mapeke, Marc and Attal, Benjamin and Richardt, Christian and O'Toole, Matthew and Tompkin, James},
+  booktitle = {Computer Vision -- ECCV 2024},
+  publisher = {Springer Nature Switzerland},
+  isbn      = {9783031730337},
+  issn      = {1611-3349},
+  doi       = {10.1007/978-3-031-73033-7_21},
+  pages     = {373--389},
+  year      = {2024},
+  month     = oct
+}</code></pre>
+    </section>
 
-        const target = document.getElementById("datasets")
-        const dsDiv = document.createElement("div")
-        dsDiv.setAttribute("id", d.name + '-results')
-        target.append(dsDiv)
-        dsDiv.innerHTML += "<h2>" + (i + 1) + ". Results on the <span class='dataset'>" + d.displayName + "</span> dataset &nbsp; <a href='#top'>🔝</a></h2>"
+    <section id="acknowledgements-section">
+      <h2 id="acknowledgements">Acknowledgements</h2>
+      <p>
+        Mikhail Okunev and James Tompkin thank NSF CAREER 2144956 and Cognex. Marc Mapeke acknowledges support from a Jack Kent Cooke Foundation scholarship, and Benjamin Attal from a Meta Research PhD Fellowship. Matthew O'Toole thanks NSF CAREER 2238485.
+      </p>
+    </section>
 
-        dsDiv.innerHTML = dsDiv.innerHTML + `<button onclick='
-                                            showVideoDiv(\"` + d.name + `\");
-                                            setPlayStateOnVideos( document.getElementById(\"` + d.name + `-results\").getElementsByTagName( \"video\" ), true ` + `);
-                                            window.location = \"#Dataset` + d.name + `\";'
-                                          >
-                                          Show Videos
-                                          </button>`
-        dsDiv.innerHTML = dsDiv.innerHTML + `<button onclick='hideVideoDiv(\"` + d.name + `\")'>Hide Videos</button><br><br>`
+    <footer class="logos" data-logos="nsf cognex meta jkc"></footer>
 
-        const videoGridData = [methods.map((method) => (
-          method.name != 'gt' || d.gt_exists ?
-            {
-              path: d.folder + "/" + d.name + "/" + method.name + '.mp4',
-              label: method.displayName
-            } : null
-        ))]
-
-        const videoDiv = document.createElement("div")
-        
-        if( d.note != undefined && d.note != "" )
-        {
-          videoDiv.innerHTML += "<p><em>Note:</em> " + d.note + "</p>"
-        }
-
-        videoDiv.setAttribute("id", d.name + '-videos')
-        dsDiv.append(videoDiv);
-        addVideoControls(videoDiv, d.name + '-videos')
-        addVideoGrid(videoDiv, videoGridData);
-        hideVideoDiv(d.name);
-      });
-
-
-    </script>
-    
-
-<h2>Acknowledgements</h2>
-
-Mikhail Okunev and James Tompkin thank NSF CAREER 2144956 and Cognex. Marc Mapeke acknowledges support from a Jack Kent Cooke Foundation scholarship, and Benjamin Attal from a Meta Research PhD Fellowship. Matthew O'Toole thanks NSF CAREER 2238485.
-
-<br>
-
-<table style="border-spacing: 0px 0;">
-<tr>
-<td><img src="./images/nsf-logo-desktop.svg" width="200px"></td>
-<td><img src="./images/cognexLogo.jpg" width="200px"></td>
-<td><img src="./images/MetaLogo.png" width="200px"></td>
-<td><img src="./images/jkcLogo.png" width="200px"></td>
-</tr>
-</table>
-
-<!--
-The work was presented orally at <a href="https://necv2022.github.io/">NECV 2022 workshop</a>.
--->
-
-</div>
-
-
-
-
-
-
+  </main>
 </body>
 
 </html>
