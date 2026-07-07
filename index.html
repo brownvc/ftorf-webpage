@@ -172,12 +172,12 @@ redirect_from: ftorf/
           ];
 
           const methods = [
-            { name: 'full_model_depth', displayName: 'Ours (Depth)', width: 500 },
-            { name: 'full_model_fwd_flow', displayName: 'Ours (Forward Flow)', width: 500 },
-            { name: 'ctof', displayName: 'C-ToF', width: 500 },
-            { name: 'torf', displayName: 'T&ouml;RF', width: 500 },
-            { name: 'warped', displayName: '2D Flowed', width: 500 },
-            { name: 'gt', displayName: 'Ground Truth', width: 500 },
+            { name: 'full_model_depth', displayName: 'Ours (Depth)' },
+            { name: 'full_model_fwd_flow', displayName: 'Ours (Forward Flow)' },
+            { name: 'ctof', displayName: 'C-ToF' },
+            { name: 'torf', displayName: 'T&ouml;RF' },
+            { name: 'warped', displayName: '2D Flowed' },
+            { name: 'gt', displayName: 'Ground Truth' },
           ];
 
           const groups = {};
@@ -191,23 +191,18 @@ redirect_from: ftorf/
             root.appendChild(h3);
 
             groups[groupName].forEach(function (d, i) {
-              const videos = methods
-                .filter(function (m) { return m.name !== 'gt' || d.gt_exists; })
-                .map(function (m) {
-                  return {
-                    src: d.folder + '/' + d.name + '/' + m.name + '.mp4',
-                    label: m.displayName,
-                    width: m.width,
-                  };
-                });
-              // Source ran every clip at half speed by default; keep that.
-              const rate = 0.5;
+              // One row of the methods side by side (matrix), null-padding the
+              // Ground Truth column on scenes without GT so it stays aligned.
+              const cells = methods.map(function (m) {
+                if (m.name === 'gt' && !d.gt_exists) return null;
+                return { src: d.folder + '/' + d.name + '/' + m.name + '.mp4', label: m.displayName };
+              });
               // Collapsed by default: each dataset's clips load only when the
               // reader opens it, so the page isn't a wall of autoplaying video
               // (there are 100+ clips in total).
               const intro = d.note ? '<p><em>Note:</em> ' + d.note + '</p>' : '';
-              videoGridCollapsible(root, (i + 1) + '. ' + d.displayName, videos,
-                { controls: true, syncReset: true, rate: rate, layout: 'stack', intro: intro });
+              videoGridCollapsible(root, (i + 1) + '. ' + d.displayName, cells,
+                { columns: methods.length, controls: true, syncReset: true, rate: 0.5, intro: intro });
             });
           });
         });
