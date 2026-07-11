@@ -32,6 +32,9 @@ redirect_from: ftorf/
   <!-- Page-specific: teaser is a two-clip before/after comparison, so reset
        the shared full-width rule and lay the pair side by side. -->
   <style>
+    /* Two side-by-side clips, not one full-width plate: drop the shared
+       frame (its border left big empty margins around the centered pair). */
+    .teaser { border: 0; overflow: visible; }
     .teaser-row {
       display: flex;
       justify-content: center;
@@ -45,7 +48,7 @@ redirect_from: ftorf/
       width: auto;
       max-width: 100%;
       max-height: 320px;
-      border-radius: 6px;
+      border-radius: 0;
       display: block;
     }
     .teaser-row figcaption { text-align: center; margin-top: 0.4em; }
