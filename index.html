@@ -32,9 +32,8 @@ redirect_from: ftorf/
   <!-- Page-specific: teaser is a two-clip before/after comparison, so reset
        the shared full-width rule and lay the pair side by side. -->
   <style>
-    /* Two side-by-side clips, not one full-width plate: drop the shared
-       frame (its border left big empty margins around the centered pair). */
-    .teaser { border: 0; overflow: visible; }
+    /* Before/after clips — the shared .teaser-row handles the frame-drop and
+       base layout; these are ftorf's deltas (tops aligned, a wider gap). */
     .teaser-row {
       display: flex;
       justify-content: center;
